@@ -2,7 +2,7 @@
 
 ## Lesson Objectives
 
-1. Initialize a directory
+1. Initialize an application
 1. Start express
 1. Create New Route
 1. Create Create Route

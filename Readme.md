@@ -13,11 +13,11 @@ This readme provides links to relevant lesson content that will be covered:
 
 | Number | Topic | Summary |
 | ----------- | ----------- | ---------- |
-| 1 | [Mongoose Create and Read](./01_mongoose_CR.md) | Mongoose Create & Read (Fruits) | 
-| 2 | [Express Routing](./02_mongoose_UD.md) | Mongoose Delete & Update (Fruits) | 
+| 1 | [Mongoose Create and Read](./01_mongoose_CR.md) | Mongoose Create & Read (Articles) | 
+| 2 | [Mongoose Update and Delete](./02_mongoose_UD.md) | Mongoose Delete & Update (Articles) | 
 | 3 | [Express Router](./03_routers_controllers.md) | Migrating routes to controller files | 
-| 4 | [Model Associations](./04_model_associations.md) | (Refactor) Discusses Data Associations / 1:M relations using objectId | 
-| 4A | [Mongo Sub-Documents](./04a_sub_docs.md) | (Bonus) Provides examples of sub-document implementations | 
+| 4 | [Model Associations](./04_model_associations.md) | (Refactor) Discusses Data Associations / 1:M relations using objectId (Articles/Authors) | 
+| 4A |[Mongo Sub-Documents](./04a_sub_docs.md) | (Bonus) Provides examples of sub-document implementations | 
 | 5 | [Express Session Intro](./05_express_sessions.md) | (Bonus) - Overview of `express-session` middleware | 
 | 6 | [Axios + Express](./06_bcrypt_authentication.md) | (Bonus) - Covers implementing a `User` Model and associating data between user and resource | 
 

@@ -24,8 +24,8 @@ In your index.ejs file
 
 ```html
 <li>
-    The <a href="/fruits/<%=fruits[i].id; %>"><%=fruits[i].name; %></a> is  <%=fruits[i].color; %>.
-    <% if(fruits[i].readyToEat === true){ %>
+    The <a href="/authors/<%=authors[i]._id%>"><%=authors[i].name; %></a> is  <%=authors[i].color; %>.
+    <% if(authors[i].isActive === true){ %>
         It is ready to eat
     <% } else { %>
         It is not ready to eat
@@ -40,7 +40,7 @@ In your index.ejs file
 ## Create a Delete Route
 
 ```javascript
-app.delete('/fruits/:id', (req, res)=>{
+app.delete('/authors/:id', (req, res)=>{
     res.send('deleting...');
 });
 ```
@@ -69,17 +69,17 @@ app.use(methodOverride('_method'));
 Now go back and set up our delete form to send a DELETE request to the appropriate route
 
 ```html
-<form action="/fruits/<%=fruits[i].id; %>?_method=DELETE" method="POST">
+<form action="/authors/<%=authors[i]._id%>?_method=DELETE" method="POST">
 ```
 
 ## Make the Delete Route Delete the Model from MongoDB
 
-Also, have it redirect back to the fruits index page when deletion is complete
+Also, have it redirect back to the authors index page when deletion is complete
 
 ```javascript
-app.delete('/fruits/:id', (req, res)=>{
+app.delete('/authors/:id', (req, res)=>{
     Fruit.findByIdAndRemove(req.params.id, (err, data)=>{
-        res.redirect('/fruits');//redirect back to fruits index
+        res.redirect('/authors');//redirect back to authors index
     });
 });
 ```
@@ -89,7 +89,7 @@ app.delete('/fruits/:id', (req, res)=>{
 In your `index.ejs` file:
 
 ```html
-<a href="/fruits/<%=fruits[i].id; %>/edit">Edit</a>
+<a href="/authors/<%=authors[i]._id; %>/edit">Edit</a>
 ```
 
 ## Create an edit route/page
@@ -97,7 +97,7 @@ In your `index.ejs` file:
 First the route:
 
 ```javascript
-app.get('/fruits/:id/edit', (req, res)=>{
+app.get('/authors/:id/edit', (req, res)=>{
     Fruit.findById(req.params.id, (err, foundFruit)=>{ //find the fruit
         res.render(
     		'edit.ejs',
@@ -125,8 +125,8 @@ Now the EJS:
     		Name: <input type="text" name="name" value="<%=fruit.name%>"/><br/>
     		Color: <input type="text" name="color" value="<%=fruit.color%>"/><br/>
     		Is Ready To Eat:
-            <input type="checkbox" name="readyToEat"
-                <% if(fruit.readyToEat === true){ %>
+            <input type="checkbox" name="isActive"
+                <% if(fruit.isActive === true){ %>
                     checked
                 <% } %>
             />
@@ -140,11 +140,11 @@ Now the EJS:
 ## Create an PUT route
 
 ```javascript
-app.put('/fruits/:id', (req, res)=>{
-    if(req.body.readyToEat === 'on'){
-        req.body.readyToEat = true;
+app.put('/authors/:id', (req, res)=>{
+    if(req.body.isActive === 'on'){
+        req.body.isActive = true;
     } else {
-        req.body.readyToEat = false;
+        req.body.isActive = false;
     }
     res.send(req.body);
 });
@@ -155,17 +155,17 @@ app.put('/fruits/:id', (req, res)=>{
 In the `edit.ejs`
 
 ```html
-<form action="/fruits/<%=fruit.id%>?_method=PUT" method="POST">
+<form action="/authors/<%=fruit.id%>?_method=PUT" method="POST">
 ```
 
 ## Make the PUT Route Update the Model in MongoDB
 
 ```javascript
-app.put('/fruits/:id', (req, res)=>{
-    if(req.body.readyToEat === 'on'){
-        req.body.readyToEat = true;
+app.put('/authors/:id', (req, res)=>{
+    if(req.body.isActive === 'on'){
+        req.body.isActive = true;
     } else {
-        req.body.readyToEat = false;
+        req.body.isActive = false;
     }
     Fruit.findByIdAndUpdate(req.params.id, req.body, {new:true}, (err, updatedModel)=>{
         res.send(updatedModel);
@@ -177,6 +177,6 @@ app.put('/fruits/:id', (req, res)=>{
 
 ```javascript
 Fruit.findByIdAndUpdate(req.params.id, req.body, (err, updatedModel)=>{
-    res.redirect('/fruits');
+    res.redirect('/authors');
 });
 ```

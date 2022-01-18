@@ -17,8 +17,8 @@
 ## Create External Controller File for Routes
 
 1. `mkdir controllers`
-1. `touch controllers/fruits.js`
-1. Edit controllers/fruits.js
+1. `touch controllers/authors.js`
+1. Edit controllers/authors.js
 
 ```javascript
 const express = require('express');
@@ -32,82 +32,103 @@ module.exports = router;
 rename `app` to `router`
 
 ```javascript
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
-router.get('/fruits/new', (req, res)=>{
-    res.render('new.ejs');
-});
+//NEW ROUTE
+router.get("/authors/new", (req, res) => res.render("new"));
 
-router.post('/fruits/', (req, res)=>{
-    if(req.body.readyToEat === 'on'){ //if checked, req.body.readyToEat is set to 'on'
-        req.body.readyToEat = true;
-    } else { //if not checked, req.body.readyToEat is undefined
-        req.body.readyToEat = false;
-    }
-    Fruit.create(req.body, ()=>{
-        res.redirect('/fruits');
-    });
-});
-
-router.get('/fruits', (req, res)=>{
-    Fruit.find({}, (error, allFruits)=>{
-        res.render('index.ejs', {
-            fruits: allFruits
-        });
-    });
-});
-
-router.get('/fruits/:id', (req, res)=>{
-    Fruit.findById(req.params.id, (err, foundFruit)=>{
-        res.render('show.ejs', {
-            fruit:foundFruit
-        });
-    });
-});
-
-router.delete('/fruits/:id', (req, res)=>{
-    Fruit.findByIdAndRemove(req.params.id, (err, data)=>{
-        res.redirect('/fruits')
-    });
-});
-
-router.get('/fruits/:id/edit', (req, res)=>{
-    Fruit.findById(req.params.id, (err, foundFruit)=>{ //find the fruit
-        res.render(
-    		'edit.ejs',
-    		{
-    			fruit: foundFruit //pass in found fruit
-    		}
-    	);
-    });
-});
-
-router.put('/fruits/:id', (req, res)=>{
-    if(req.body.readyToEat === 'on'){
-        req.body.readyToEat = true;
+//INDEX ROUTE
+router.get("/authors", (req, res) => {
+  Author.find({}, (err, allAuthors) => {
+    if (err) {
+      res.send(err);
     } else {
-        req.body.readyToEat = false;
+      res.render("index", { authors: allAuthors });
     }
-    //{new: true} tells mongoose to send the updated model into the callback
-    Fruit.findByIdAndUpdate(req.params.id, req.body, {new: true}, (err, updatedModel)=>{
-        res.redirect('/fruits');
-    });
+  });
+});
+
+//SHOW ROUTE
+router.get("/authors/:id", (req, res) => {
+  Author.findById(req.params.id, (err, foundAuthor) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.render("show", { author: foundAuthor });
+    }
+  });
+});
+//EDIT ROUTE
+router.get("/authors/:id/edit", (req, res) => {
+  Author.findById(req.params.id, (err, foundAuthor) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.render("edit", { author: foundAuthor });
+    }
+  });
+});
+//CREATE ROUTE
+router.post("/authors", (req, res) => {
+  Author.create(req.body, (err, createdAuthor)=>{
+    if(err){
+      res.send(err)
+    }else {
+      console.log(createdAuthor);
+      res.redirect("/authors");
+    }
+  })
+});
+
+// UPDATE ROUTE
+router.put("/authors/:id", (req, res) => {
+  if (req.body.isActive == "on") {
+    req.body.isActive = true;
+  } else {
+    req.body.isActive = false;
+  }
+
+  Author.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true },
+    (err, updatedAuthor) => {
+      if (err) {
+        res.send(err);
+      } else {
+        console.log(updatedAuthor);
+        res.redirect("/authors/" + updated._id);
+      }
+    }
+  );
+});
+
+// DELETE ROUTE
+router.delete("/authors/:id", (req, res) => {
+  Author.findByIdAndRemove(req.params.id, (err, data) => {
+    if(err){
+      res.send(err)
+    }else {
+      res.redirect("/authors");
+    }
+  });
 });
 
 module.exports = router;
+
 ```
 
-## Require Fruit Model in Controller File
+## Require Author Model in Controller File
 
 ```javascript
 const express = require('express');
 const router = express.Router();
-const Fruit = require('../models/fruits.js')
+const Author = require('../models/authors.js')
 //...
 ```
 
-The `Fruit` model is no longer needed in `server.js`.  Remove it:
+The `Author` model is no longer needed in `server.js`.  Remove it:
 
 ```javascript
 const express = require('express');
@@ -119,84 +140,106 @@ const methodOverride = require('method-override');
 ## Use Controller File in Server.js
 
 ```javascript
-const fruitsController = require('./controllers/fruits.js');
-app.use(fruitsController);
+const authorsController = require('./controllers/authors.js');
+app.use(authorsController);
+
 ```
 
 ## Remove References to Base of Controller's URLs
 
-You can specify when a middleware runs
+You can specify a route when a middleware runs
 
 ```javascript
-const fruitsController = require('./controllers/fruits.js');
-app.use('/fruits', fruitsController);
+const authorsController = require('./controllers/authors.js');
+app.use('/authors', authorsController);
 ```
 
-Since we've specified that the controller works with all urls starting with /fruits, we can remove this from the controller file:
+Since we've specified that the controller works with all urls starting with /authors, we can remove this from the controller file:
 
 ```javascript
-const express = require('express');
+
+const express = require("express");
+const Author = require("../models/Author");
 const router = express.Router();
-const Fruit = require('./models/fruits.js');
 
-router.get('/new', (req, res)=>{
-    res.render('new.ejs');
-});
+//NEW ROUTE
+router.get("/new", (req, res) => res.render("new"));
 
-router.post('/', (req, res)=>{
-    if(req.body.readyToEat === 'on'){ //if checked, req.body.readyToEat is set to 'on'
-        req.body.readyToEat = true;
-    } else { //if not checked, req.body.readyToEat is undefined
-        req.body.readyToEat = false;
-    }
-    Fruit.create(req.body, ()=>{
-        res.redirect('/fruits');
-    });
-});
-
-router.get('/', (req, res)=>{
-    Fruit.find({}, (error, allFruits)=>{
-        res.render('index.ejs', {
-            fruits: allFruits
-        });
-    });
-});
-
-router.get('/:id', (req, res)=>{
-    Fruit.findById(req.params.id, (err, foundFruit)=>{
-        res.render('show.ejs', {
-            fruit:foundFruit
-        });
-    });
-});
-
-router.delete('/:id', (req, res)=>{
-    Fruit.findByIdAndRemove(req.params.id, (err, data)=>{
-        res.redirect('/fruits')
-    });
-});
-
-router.get('/:id/edit', (req, res)=>{
-    Fruit.findById(req.params.id, (err, foundFruit)=>{ //find the fruit
-        res.render(
-    		'edit.ejs',
-    		{
-    			fruit: foundFruit //pass in found fruit
-    		}
-    	);
-    });
-});
-
-router.put('/:id', (req, res)=>{
-    if(req.body.readyToEat === 'on'){
-        req.body.readyToEat = true;
+//INDEX ROUTE
+router.get("/", (req, res) => {
+  Author.find({}, (err, allAuthors) => {
+    if (err) {
+      res.send(err);
     } else {
-        req.body.readyToEat = false;
+      res.render("index", { authors: allAuthors });
     }
-    //{new: true} tells mongoose to send the updated model into the callback
-    Fruit.findByIdAndUpdate(req.params.id, req.body, {new: true}, (err, updatedModel)=>{
-        res.redirect('/fruits');
-    });
+  });
+});
+
+//SHOW ROUTE
+router.get("/:id", (req, res) => {
+  Author.findById(req.params.id, (err, foundAuthor) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.render("show", { author: foundAuthor });
+    }
+  });
+});
+//EDIT ROUTE
+router.get("/:id/edit", (req, res) => {
+  Author.findById(req.params.id, (err, foundAuthor) => {
+    if (err) {
+      res.send(err);
+    } else {
+      res.render("edit", { author: foundAuthor });
+    }
+  });
+});
+//CREATE ROUTE
+router.post("/", (req, res) => {
+  Author.create(req.body, (err, createdAuthor)=>{
+    if(err){
+      res.send(err)
+    }else {
+      console.log(createdAuthor);
+      res.redirect("/authors");
+    }
+  })
+});
+
+// UPDATE ROUTE
+router.put("/:id", (req, res) => {
+  if (req.body.isActive == "on") {
+    req.body.isActive = true;
+  } else {
+    req.body.isActive = false;
+  }
+
+  Author.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true },
+    (err, updatedAuthor) => {
+      if (err) {
+        res.send(err);
+      } else {
+        console.log(updatedAuthor);
+        res.redirect("/authors/" + updated._id);
+      }
+    }
+  );
+});
+
+// DELETE ROUTE
+router.delete("/:id", (req, res) => {
+  Author.findByIdAndRemove(req.params.id, (err, data) => {
+    if(err){
+      res.send(err)
+    }else {
+      res.redirect("/authors");
+    }
+  });
 });
 
 module.exports = router;

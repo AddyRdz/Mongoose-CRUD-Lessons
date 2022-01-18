@@ -27,20 +27,20 @@
 ## Start express
 
 ```javascript
-const express = require("express");
-const app = express();
+const express = require("express")
+const app = express()
 
 app.listen(8000, () => {
-  console.log("listening on port 8000");
-});
+  console.log("listening on port 8000")
+})
 ```
 
 ## Create New Route
 
 ```javascript
 app.get("/authors/new", (req, res) => {
-  res.send("new");
-});
+  res.send("new")
+})
 ```
 
 1. `mkdir views`
@@ -56,12 +56,23 @@ app.get("/authors/new", (req, res) => {
     <title></title>
   </head>
   <body>
-    <h1>New Author page</h1>
+    <h1>Author: New Page </h1>
     <form action="/authors" method="POST">
-      Name: <input type="text" name="fullName" /><br />
-      Origin: <input type="text" name="origin" /><br />
-      Bio: <textarea name="bio"></textarea><br />
-      <input type="submit" name="" value="Create Author" />
+        <label for="fullName">
+            Name (full name):  <input name="fullName" type="text"> <br/>
+        </label>
+        <label for="origin">
+            Country of Origin: <input name="origin" type="text"> 
+        </label>
+        <label for="isActive">
+            Currently Active: <input type="checkbox" name="isActive">
+        </label>
+       
+        <label for="isActive">
+            Bio: <br> 
+            <textarea name="bio">Add bio</textarea>
+        </label>
+        <input type="submit" value="Create Author">
     </form>
   </body>
 </html>
@@ -71,30 +82,30 @@ Render the view
 
 ```javascript
 app.get("/authors/new", (req, res) => {
-  res.render("new.ejs");
-});
+  res.render("new.ejs")
+})
 ```
 
 ## Create Create Route
 
 ```javascript
 app.post("/authors/", (req, res) => {
-  res.send("received");
-});
+  res.send("received")
+})
 ```
 
 1. Use express.urlencoded in server.js:
 
 ```javascript
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true }))
 ```
 
 Check to see if req.body is defined and data fields are populated:
 
 ```javascript
 app.post("/authors/", (req, res) => {
-  res.send(req.body);
-});
+  res.send(req.body)
+})
 ```
 
 ## Connect Express to Mongo
@@ -103,19 +114,23 @@ app.post("/authors/", (req, res) => {
 1. Inside server.js:
 
 ```javascript
-const mongoose = require("mongoose");
+const mongoose = require("mongoose")
 
 //... and then farther down the file
-mongoose.connect("mongodb://localhost:27017/authors");
+mongoose.connect("mongodb://localhost:27017/authors", {
+  useNewUrlParser: true,
+})
+
+// Note: configuring mongoose connections in version 6+ no longer requires 'useNewUrlParser' option
+
 mongoose.connection.once("open", () => {
-  console.log("connected to mongo");
-});
+  console.log("connected to mongo")
+})
 
-// ... additional db events can trigger listeners
+// ... additional db events can custom logging messages
 
-mongoose.connection.on("connected", () => console.log("connection made"));
-mongoose.connection.on("disconnected", () => console.log("connetion lost"));
-
+mongoose.connection.on("connected", () => console.log("connection made"))
+mongoose.connection.on("disconnected", () => console.log("connetion lost"))
 ```
 
 ## Create authors Model
@@ -125,7 +140,7 @@ mongoose.connection.on("disconnected", () => console.log("connetion lost"));
 1. Create the Author schema
 
 ```javascript
-const mongoose = require("mongoose");
+const mongoose = require("mongoose")
 
 const authorschema = new mongoose.Schema(
   {
@@ -139,11 +154,12 @@ const authorschema = new mongoose.Schema(
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
-);
+  //
+)
 
-const Author = mongoose.model("Author", authorschema);
+const Author = mongoose.model("Author", authorschema)
 
-module.exports = Author;
+module.exports = Author
 ```
 
 ## Have Create Route Create data in MongoDB
@@ -151,19 +167,24 @@ module.exports = Author;
 Inside server.js:
 
 ```javascript
-const Author = require("./models/Author.js");
+const Author = require("./models/Author.js")
 //... and then farther down the file
 app.post("/authors/", (req, res) => {
   if (req.body.isActive === "on") {
     //if checked, req.body.isActive is set to 'on'
-    req.body.isActive = true;
+    req.body.isActive = true
   } else {
     //if not checked, req.body.isActive is undefined
-    req.body.isActive = false;
+    req.body.isActive = false
   }
-  Author.create(req.body, (error, createdAuthor) => {
-    res.send(createdAuthor);
-  });
+
+  Author.create(req.body, (err, createdAuthor) => {
+    if(err){
+      res.send(err)
+    }else {
+      res.send(createdAuthor)
+    }
+  })
 
   /*
     An alternative syntax using .then() promises
@@ -176,15 +197,47 @@ app.post("/authors/", (req, res) => {
         res.send(err)
     })
   */
-});
+
+  /*
+    An alternative syntax using async/await - note you have to set your callback to be 'async'
+    ============================================
+
+    app.post('/authors', async (req,res)=>{
+      try {
+
+      // parsing form data 
+        
+      if (req.body.isActive === "on") {
+        //if checked, req.body.isActive is set to 'on'
+        req.body.isActive = true
+      } else {
+        //if not checked, req.body.isActive is undefined
+        req.body.isActive = false
+      }
+      // await tells JS that Author.create returns a promise when the promise is resolved, its value will be stored in the variable. 
+
+      const createdAuthor = await Author.create(req.body)
+      console.log(createdAuthor)
+
+      res.redirect('/authors')
+
+      }catch(err){
+        // if an error is detected, the 'catch' will provide an error param with the associated express error
+        res.send(err)
+      }
+
+    })
+    
+  */
+})
 ```
 
 ## Create Index Route
 
 ```javascript
 app.get("/authors", (req, res) => {
-  res.send("index");
-});
+  res.send("index")
+})
 ```
 
 `touch views/index.ejs`
@@ -206,20 +259,24 @@ Render the ejs file
 
 ```javascript
 app.get("/authors", (req, res) => {
-  res.render("index.ejs");
-});
+  res.render("index.ejs")
+})
 ```
 
 ## Have Index Route Render All authors
 
 ```javascript
 app.get("/authors", (req, res) => {
-  Author.find({}, (error, allAuthors) => {
-    res.render("index.ejs", {
+  Author.find({}, (err, allAuthors) => {
+    if(err){
+      res.send(err)
+    }else {
+      res.render("index.ejs", {
       authors: allAuthors,
-    });
-  });
-});
+      })
+    }
+  })
+})
 ```
 
 Update the ejs file:
@@ -234,7 +291,7 @@ Update the ejs file:
   <body>
     <h1>authors index page</h1>
     <ul>
-      <% for(let i = 0; i < authors.length; i++){ %>
+      <% for(let i = 0 i < authors.length i++){ %>
       <li><%=authors[i].fullName %> - <%=authors[i].origin %></li>
       <% if(authors[i].isActive === true){ %> They are currently active <% }
       else { %> They are not currently active <% } %> <% } %>
@@ -257,8 +314,10 @@ Inside the create route
 
 ```javascript
 Author.create(req.body, (error, createdAuthor) => {
-  res.redirect("/authors");
-});
+  // ...
+  res.redirect("/authors")
+  // ...
+})
 ```
 
 ## Have Index Page Link to Show Route
@@ -275,9 +334,13 @@ Author.create(req.body, (error, createdAuthor) => {
 ```javascript
 app.get("/authors/:id", (req, res) => {
   Author.findById(req.params.id, (err, foundAuthor) => {
-    res.send(foundAuthor);
-  });
-});
+    if(err){
+      res.send(err)
+    }else {
+      res.send(foundAuthor)
+    }
+  })
+})
 ```
 
 ## Create show.ejs
@@ -319,9 +382,13 @@ Render the ejs
 ```javascript
 app.get("/authors/:id", (req, res) => {
   Author.findById(req.params.id, (err, foundAuthor) => {
-    res.render("show.ejs", {
-      Author: foundAuthor,
-    });
-  });
-});
+    if(err){
+      res.send(err)
+    }else {
+      res.render("show.ejs", {
+      Author: foundAuthor
+    })
+    }
+  })
+})
 ```

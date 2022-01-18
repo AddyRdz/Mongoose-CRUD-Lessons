@@ -116,7 +116,10 @@ This approach for creating unique authors that 'contains' or embeds articles sub
 
 ```javascript
 const authorSchema = mongoose.Schema({
-    name: String,
+    fullName: String,
+    origin: String,
+    isActive: Boolean,
+    bio: String, 
     articles: [{
         type: mongoose.Schema.Types.ObjectId,
 		ref: 'Article'
@@ -243,7 +246,7 @@ const articleSchema = mongoose.Schema({
 });
 ```
 
-This kind of relationship will work just find. But, let's use the `ObjectId` so that we can reference one model (e.g., Author) inside another model (e.g., Article).
+This kind of relationship will work just fine. But, let's use the `ObjectId` so that we can reference one model (e.g., Author) inside another model (e.g., Article).
 
 ## Update Articles Model
 
@@ -282,7 +285,7 @@ Now that our author object is part of the article object, we need to reference t
 
 ```html
 <!-- Inside the <head> tag -->
-<title><%= article.title %> by <%= article.author.name %></title>
+<title><%= article.title %> by <%= article.author.fullName %></title>
 <!-- Further down -->
 <h3>Author: <%= author.name %></h3>
 ```

@@ -1,6 +1,6 @@
 ![](https://ga-dash.s3.amazonaws.com/production/assets/logo-9f88ae6c9c3871690e33280fcf557f33.png)
 
-# Data Associations with Mongoose
+# Data Associations with Mongoose (DRAFT)
 
 ### Why is this important?
 <!-- framing the "why" in big-picture/real world examples -->
@@ -115,6 +115,13 @@ This approach for creating unique authors that 'contains' or embeds articles sub
 ### 1. An array of articles in our `Author` model:
 
 ```javascript
+// in /models/Article.js
+
+const articleSchema = mongoose.Schema({
+    title: String,
+    body: String
+}
+// in /models/Author.js
 const authorSchema = mongoose.Schema({
     fullName: String,
     origin: String,
@@ -137,7 +144,7 @@ So, an author's document in the db might look like this:
 }
 ```
 
-Which, when the `ObjectId`s are expanded, would look like this:
+Which, when the `ObjectId`s are expanded using .populate() (more on this later), our query would look like this:
 
 ```javascript
 { 
@@ -165,7 +172,13 @@ Which, when the `ObjectId`s are expanded, would look like this:
 
 In this approach, we are saying that we want to store article ids in an array inside the `Author` model so that, whenever we query an author or all the authors, we can get all their articles along with it!
 
-While this is beneficial in a Read query, the complexity is increased when we want to create an article (this assumes the author's id was part of the form data, which is what we've been doing with the dropdown so far):
+While this is beneficial in a Read query, the complexity is increased when we want to create an article (this assumes the author's id was part of the form data):
+
+```html
+<!--  Add copy for author  -->
+
+```
+
 
 ```javascript
 Author.findById(req.body.author_id, (err, foundAuthor) => {
@@ -178,6 +191,13 @@ Author.findById(req.body.author_id, (err, foundAuthor) => {
 ```
 
 Like our classes from Unit 1, `foundAuthor` is an instance of the `Author` class. So, we'd need to take the newly-created article and `.push` it into the `foundAuthor`'s `articles` property. Then, once that's done, we can then `.save` the `foundAuthor`, which effectively updates that author by mutating its `articles` array.
+
+Additional complexity is added when deleting an article from an author's articles array:
+- Query the Author and update the document - (and their associated articles array) using the MongoDB [pull method](https://mongoosejs.com/docs/api/array.html#mongoosearray_MongooseArray-pull)
+OR
+- Pass the article ObjectId to the request - locate the Author by their id and remove (splice) the designated article from the articles array. 
+
+
 
 ### 2. An author id in each `Article` model.
 
@@ -267,7 +287,7 @@ Notice that the `type` is an `ObjectId` and that, with this `ObjectId`, we are r
 
 Also, note that we updated `author_id` to `author` since we are now referring to the full author object instead of just the author's id.
 
-## Update the Articles Show Route
+## Updating the Articles Show Route with a populate()
 
 ```javascript
 router.get('/:id', async (req, res) => {
@@ -287,7 +307,7 @@ Now that our author object is part of the article object, we need to reference t
 <!-- Inside the <head> tag -->
 <title><%= article.title %> by <%= article.author.fullName %></title>
 <!-- Further down -->
-<h3>Author: <%= author.name %></h3>
+<h3>Author: <%= article.author.fullName %></h3>
 ```
 
 ## Update the Articles New and Edit Pages

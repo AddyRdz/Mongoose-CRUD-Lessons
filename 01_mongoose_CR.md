@@ -117,9 +117,7 @@ app.post("/authors/", (req, res) => {
 const mongoose = require("mongoose")
 
 //... and then farther down the file
-mongoose.connect("mongodb://localhost:27017/authors", {
-  useNewUrlParser: true,
-})
+mongoose.connect("mongodb://127.0.0.1:27017/authors")
 
 // Note: configuring mongoose connections in version 6+ no longer requires 'useNewUrlParser' option
 

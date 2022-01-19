@@ -50,7 +50,6 @@ Each leaf "belongs to" the one tree it grew from, and each tree "has many" leave
 
 Each student "has many" classes they attend, and each class "has many" students.
 
-
 ![many to many erd example](https://cloud.githubusercontent.com/assets/3254910/18140903/4c56c3ee-6f6c-11e6-9b6d-4c6ffae81323.png)
 
 
@@ -81,10 +80,10 @@ It is often *efficient* to embed data because you don't have to make a separate 
 
 **Referenced Data** is stored as an *id* inside other data. The id can be used to look up the information. All records that reference the same data look up the same copy.
 
-
 It is usually easier to keep referenced records *consistent* because the data is only stored in one place and only needs to be updated in one place.  
 
 ![image](https://cloud.githubusercontent.com/assets/6520345/21190300/2c091f08-c1d6-11e6-89ed-0459874edf3a.png)
+
 [Source: MongoDB docs](https://docs.mongodb.com/v3.2/tutorial/model-referenced-one-to-many-relationships-between-documents/)
 
 
@@ -93,7 +92,6 @@ While the question of one-to-one, one-to-many, or  many-to-many is often determi
 There are tradeoffs, such as between *efficiency* and *consistency*, depending on which one you choose.  
 
 When using Mongo and Mongoose, though, many-to-many relationships often involve referenced associations, while one-to-many often involve embedding data.
-
 
 #### Check for Understanding
 
@@ -119,7 +117,8 @@ This approach for creating unique authors that 'contains' or embeds articles sub
 
 const articleSchema = mongoose.Schema({
     title: String,
-    body: String
+    body: String,
+    author_id: String,
 }
 // in /models/Author.js
 const authorSchema = mongoose.Schema({
@@ -140,6 +139,9 @@ So, an author's document in the db might look like this:
 { 
     "_id" : ObjectId("5df7022a25072e3380c97249"),
     "name" : "James Patterson",
+    "origin": "France",
+    "isActive" true,
+    "bio": "Lorem Ipsum Dolor",
     "articles": [ObjectId("5df7022a25072e3380c9723e"), ObjectId("5df7022a25072e3380c977d8"), ObjectId("5df7022a25072e3380c9709c")]
 }
 ```
@@ -150,6 +152,9 @@ Which, when the `ObjectId`s are expanded using .populate() (more on this later),
 { 
     "_id" : ObjectId("5df7022a25072e3380c97249"),
     "name" : "James Patterson",
+    "origin": "France",
+    "isActive" true,
+    "bio": "Lorem Ipsum Dolor",
     "articles": [
         {
             "_id" : ObjectId("5df7022a25072e3380c9723e"),
@@ -175,8 +180,15 @@ In this approach, we are saying that we want to store article ids in an array in
 While this is beneficial in a Read query, the complexity is increased when we want to create an article (this assumes the author's id was part of the form data):
 
 ```html
-<!--  Add copy for author  -->
-
+<!--  Inside the article's new form:  -->
+        <label>
+            <select name="author_id">
+                <%for(let i=0;i<authors.length;i++){ %>
+                    <option value="<%=authors[i]._id%>"><%=authors[i].fullName%></option>
+                <%}%>
+            </select>
+        </label>
+<!-- When creating a new article, this selector sends the ObjectId of an existing author with the article's form data -->
 ```
 
 
@@ -193,11 +205,11 @@ Author.findById(req.body.author_id, (err, foundAuthor) => {
 Like our classes from Unit 1, `foundAuthor` is an instance of the `Author` class. So, we'd need to take the newly-created article and `.push` it into the `foundAuthor`'s `articles` property. Then, once that's done, we can then `.save` the `foundAuthor`, which effectively updates that author by mutating its `articles` array.
 
 Additional complexity is added when deleting an article from an author's articles array:
-- Query the Author and update the document - (and their associated articles array) using the MongoDB [pull method](https://mongoosejs.com/docs/api/array.html#mongoosearray_MongooseArray-pull)
+- 1. Query the Author and update the document - (and their associated articles array) using the MongoDB [pull method](https://mongoosejs.com/docs/api/array.html#mongoosearray_MongooseArray-pull)
 OR
-- Pass the article ObjectId to the request - locate the Author by their id and remove (splice) the designated article from the articles array. 
+- 2. Pass the article ObjectId to the request - locate the Author by their id and remove (splice) the designated article from the articles array. Save the updated documented.  
 
-
+This process is compounded for update routes as well. Each process might take multiple read / write operations.
 
 ### 2. An author id in each `Article` model.
 
@@ -232,7 +244,10 @@ Again, when the `ObjectId` is expanded, the object would look like this:
     "body": "Lorem ipsum",
     "author": { 
         "_id" : ObjectId("5df7022a25072e3380c97249"),
-        "name" : "James Patterson"
+        "name" : "James Patterson",
+        "origin": "France",
+        "isActive" true,
+        "bio": "Lorem Ipsum Dolor"
     }
 }
 ```
@@ -252,10 +267,9 @@ So, the tradeoff is:
 
 Choosing between these two usually comes down to this: In a one-to-many relationship, would the number of the **many** objects be limited? If so, put the array in the **one** model. In other words, option #1.
 
-If, however, the number of **many** objects is potentially indefinite, then store the id of the **one** in each of the **many** models. In other words, option #2.
+If, however, the number of **many** objects is potentially indefinite (your app logic might requiere numerous updates/deletions), then store the id of the **one** in each of the **many** models. In other words, option #2.
 
-
-## Relationships By Reference in Mongoose
+## CodeAlong: Relationships By Reference in Mongoose
 Right now, our Article model looks like this:
 
 ```javascript

@@ -2,7 +2,7 @@
 
 # Data Associations with Mongoose (DRAFT)
 
-### Why is this important?
+## Overview: 
 <!-- framing the "why" in big-picture/real world examples -->
 *This workshop is important because:*
 
@@ -12,9 +12,9 @@
 
 - Understanding how to plan for, set up, and use related data will help us build more full-featured applications.
 
-### What are the objectives?
+## Objectives:
 <!-- specific/measurable goal for students to achieve -->
-*After this workshop, developers will be able to:*
+*After this lesson you will be able to:*
 
 - Compare and contrast embedded & referenced data.
 - Design nested server routes for associated resources.
@@ -22,13 +22,13 @@
 
 ### Where should we be now?
 <!-- call out the skills that are prerequisites -->
-*Before this workshop, developers should already be able to:*
+*Prerequisites:*
 
 * Use Mongoose to code Schemas and Models for single resources.
 * Create, Read, Update, and Delete data with Mongoose.
 
 
-### Numerical Categories for Relationships
+## Numerical Categories for Data Relationships
 
 ### One-to-One
 
@@ -66,19 +66,28 @@ Note: In the example above, all of the Item1, Item2, Item3 under each heading ar
 
 #### Check for Understanding
 
-Come up with an example of related data.  Draw the ERD for your relationship, including a few attributes for each model.
+How would you design the following? What properties would each model contain? Bonus: Draw an ERD for each set of related data? (see the above examples)
 
-### Association Categories for Mongoose
+* `User`s with many `Tweets`?
+* `Food`s with many `Ingredients`?
+
+
+## Association Categories for Mongoose
+
+There are two common methods for structuring data in mongoose: 
 
 **Embedded Data** is directly nested *inside* of other data. Each record has a copy of the data.
 
-It is often *efficient* to embed data because you don't have to make a separate request or a separate database query -- the first request or query gets you all the information you need.  
+_Pros_: Efficiency
 
+_Usecase_: When you embed data you won't have to make multiple requests (database queries) to get all of the information you need. Everything you need is contained within the document.
 
 <img src="https://i.imgur.com/aMG36rT.png" width="60%">
 
+**Referenced Data** 
+A document stores as an *id* that 'reference' other documents. The id can be used to look up the information. 
 
-**Referenced Data** is stored as an *id* inside other data. The id can be used to look up the information. All records that reference the same data look up the same copy.
+_Pros_: Consistency 
 
 It is usually easier to keep referenced records *consistent* because the data is only stored in one place and only needs to be updated in one place.  
 
@@ -92,13 +101,6 @@ While the question of one-to-one, one-to-many, or  many-to-many is often determi
 There are tradeoffs, such as between *efficiency* and *consistency*, depending on which one you choose.  
 
 When using Mongo and Mongoose, though, many-to-many relationships often involve referenced associations, while one-to-many often involve embedding data.
-
-#### Check for Understanding
-
-How would you design the following? Draw an ERD for each set of related data? Can you draw an ERD for each?
-
-* `User`s with many `Tweets`?
-* `Food`s with many `Ingredients`?
 
 
 ## Where to Define the Relationship
@@ -348,12 +350,12 @@ Remember RESTful routing? It's the most popular modern convention for designing 
 |---|---|---|---|
 | **HTTP Verb** | **Path** | **Description** | **Key Mongoose Method(s)** |
 | GET | /articles | Get all articles | <details><summary>click for ideas</summary>`.find`</details> |
-| POST | /articles | Create a article | <details><summary>click for ideas</summary>`new`, `.save`</details> |
-| GET | /articles/:id | Get a article | <details><summary>click for ideas</summary>`.findOne`</details> |
-| DELETE | /articles/:id | Delete a article | <details><summary>click for ideas</summary>`.findOne`, `.remove`, `.findOneAndRemove`</details> |
+| POST | /articles | Create a article | <details><summary>click for ideas</summary>`.create`</details> |
+| GET | /articles/:id | Get a article | <details><summary>click for ideas</summary>`findOne`,`.findById`</details> |
+| DELETE | /articles/:id | Delete a article | <details><summary>click for ideas</summary>`.findOne`, `.remove`, `.findByIdAndRemove`</details> |
 | GET | /articles/:article_id/comments | Get all comments from a article | <details><summary>click for ideas</summary>`.findOne`, (`.populate` if referenced)</details> |
 | POST | /articles/:article_id/comments | Create a comment for a article | <details><summary>click for ideas</summary>`.findOne`, `new`, `.save`</details> |
 | GET | /articles/:article_id/comments/:comment_id | Get a comment from a article | <details><summary>click for ideas</summary>`.findOne`</details> |
-| DELETE | /articles/:article_id/comments/:comment_id | Delete a comment from a article | <details><summary>click for ideas</summary>`.findOne`, `.remove`</details> |
+| DELETE | /articles/:article_id/comments/:comment_id | Delete a comment from a article | <details><summary>click for ideas</summary>`.findOne`, `.deleteMany`</details> |
 
 *In routes, avoid nesting resources more than one level deep.*

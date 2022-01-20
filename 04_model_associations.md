@@ -204,7 +204,7 @@ Author.findById(req.body.author_id, (err, foundAuthor) => {
 
 Like our classes from Unit 1, `foundAuthor` is an instance of the `Author` class. So, we'd need to take the newly-created article and `.push` it into the `foundAuthor`'s `articles` property. Then, once that's done, we can then `.save` the `foundAuthor`, which effectively updates that author by mutating its `articles` array.
 
-Additional complexity is added when deleting an article from an author's articles array. For more on this process, review the materials found in the [4b_one_to_many.md documentation](./4b_one_to_many.md)
+Additional complexity is added when deleting an article from an author's articles array. For more on this process, review the materials found in the [04b_one_to_many.md documentation](./04b_one_to_many.md)
 
 ### 2. An author id in each `Article` model.
 

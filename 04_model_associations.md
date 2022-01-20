@@ -1,10 +1,9 @@
 ![](https://ga-dash.s3.amazonaws.com/production/assets/logo-9f88ae6c9c3871690e33280fcf557f33.png)
 
-# Data Associations with Mongoose (DRAFT)
+# Data Associations with Mongoose
 
 ## Overview: 
 <!-- framing the "why" in big-picture/real world examples -->
-*This workshop is important because:*
 
 - Real-world data usually consists of different types of things that are related to each other in some way. An invoicing app might need to track employees, customers, and accounts. A food ordering app needs to know about restaurants, menus, and its users!  
 
@@ -94,7 +93,6 @@ It is usually easier to keep referenced records *consistent* because the data is
 ![image](https://cloud.githubusercontent.com/assets/6520345/21190300/2c091f08-c1d6-11e6-89ed-0459874edf3a.png)
 
 [Source: MongoDB docs](https://docs.mongodb.com/v3.2/tutorial/model-referenced-one-to-many-relationships-between-documents/)
-
 
 While the question of one-to-one, one-to-many, or  many-to-many is often determined by real-world characteristics of a relationship, the decision to embed or reference data is a design decision.  
 
@@ -206,12 +204,7 @@ Author.findById(req.body.author_id, (err, foundAuthor) => {
 
 Like our classes from Unit 1, `foundAuthor` is an instance of the `Author` class. So, we'd need to take the newly-created article and `.push` it into the `foundAuthor`'s `articles` property. Then, once that's done, we can then `.save` the `foundAuthor`, which effectively updates that author by mutating its `articles` array.
 
-Additional complexity is added when deleting an article from an author's articles array:
-- 1. Query the Author and update the document - (and their associated articles array) using the MongoDB [pull method](https://mongoosejs.com/docs/api/array.html#mongoosearray_MongooseArray-pull)
-OR
-- 2. Pass the article ObjectId to the request - locate the Author by their id and remove (splice) the designated article from the articles array. Save the updated documented.  
-
-This process is compounded for update routes as well. Each process might take multiple read / write operations.
+Additional complexity is added when deleting an article from an author's articles array. For more on this process, review the materials found in the [4b_one_to_many.md documentation](./4b_one_to_many.md)
 
 ### 2. An author id in each `Article` model.
 
@@ -271,75 +264,321 @@ Choosing between these two usually comes down to this: In a one-to-many relation
 
 If, however, the number of **many** objects is potentially indefinite (your app logic might requiere numerous updates/deletions), then store the id of the **one** in each of the **many** models. In other words, option #2.
 
-## CodeAlong: Relationships By Reference in Mongoose
-Right now, our Article model looks like this:
+---
+## Guide for associations using option [2]: - Many to One
 
-```javascript
-const articleSchema = mongoose.Schema({
-	title: String,
-	body: String,
-	author_id: String
+This guide demonstrates the process for making associations between related documents. Rather than store an array of sub documents refs inside our Author (one-to-many), we will demonstrate how to work with associations with articles (many) storing a reference to the author(one). 
+
+We'll start by updating the Article Schema, to accomodate storing an Author information.
+
+In `./models/Article.js`
+```js
+const articleSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    content: String,
+    author: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Author'
+    }
 });
 ```
 
-This kind of relationship will work just fine. But, let's use the `ObjectId` so that we can reference one model (e.g., Author) inside another model (e.g., Article).
+Here, we add an author property to the Article Schema, and define it as an **Object Id**. In Mongo DB, every record has a unique **Object Id** that identifies it in the collection. By storing the **Object Id** of the author we are storing a reference to the author.
 
-## Update Articles Model
+Now when creating an article, it will look something like this.
 
-Just like our example above, let's update our Article model in `models/article.js`:
+```js
+{
+  name: 'Top 10 Best Recipes of 2021',
+  content: 'If you are looking for tasty recipe you\'ve come to the right place...',
+  author: ObjectId('611088372d0f1edf1f6fce78')
+}
+```
 
-```javascript
-const articleSchema = mongoose.Schema({
-	title: String,
-	body: String,
-	author: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: 'Author'
-	}
+## Add Author Selection on Article New Page
+
+Now when visiting our form to add a new Article, we want to be able to select which Author wrote that article.
+
+In `./views/articles/new.ejs` we'll add an HTML select box, with an option for each author
+
+First check out the documentation for the [HTML Select Box](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/select) to get a sense for how it works.
+
+```html
+<form action="/articles" method="POST">
+  
+  <label for="author">Author: </label>
+
+  <select name="author" id="author">
+    <% for (let i = 0; i < allAuthors.length; i++) { %>
+        <option value="<%= allAuthors[i]._id %>">
+            <%= allAuthors[i].authorName %>
+        </option>
+    <% } %>
+  </select>
+
+  <div>
+    <label for="name">Name of Article:</label>
+    <input type="text" name="name">
+  </div>
+
+  <div>
+    <label for="content">Article Content:</label>
+    <textarea type="text" name="content"></textarea>
+  </div>
+
+  <button type="submit">Add Article</button>
+</form>
+```
+
+Notice the name atribute of the select tag is set to author. This is the name of the property we will send back in the request body. The value of each option tag is set to the author id. This is the value we will send back for author.
+
+Right now, this will break because we aren't passing in `allAuthors` to the `articlesNew.ejs` template. Let's pass the authors data to the `articlesNew.ejs` template.
+
+## Pass Author Data to the Article New Template
+
+In the articlesController, find the Article New route and add a query to get back all authors.
+
+```js
+router.get("/new", (req, res) => {
+  db.Author.find({}, (err, allAuthors) => {
+    // render the template here
+  });
 });
 ```
 
-Notice that the `type` is an `ObjectId` and that, with this `ObjectId`, we are referencing (`ref`) the `Author` model.
+Now let's render the `articlesNew.ejs` template and pass it the `allAuthors` data.
 
-Also, note that we updated `author_id` to `author` since we are now referring to the full author object instead of just the author's id.
-
-## Updating the Articles Show Route with a populate()
-
-```javascript
-router.get('/:id', async (req, res) => {
-    Article.findById(req.params.id).populate('author').exec((err, foundArticle) => {
-        res.render('articles/show.ejs', {
-            article: foundArticle
-        });
-    })
+```js
+router.get("/new", (req, res) => {
+  db.Author.find({}, (err, allAuthors) => {
+    res.render("articles/new.ejs", { allAuthors: allAuthors });
+  });
 });
 ```
 
-## Update the Articles Show Page
+Now, when visiting the form to add a new Author, we should see a select box dropdown to pick from the list of our authors! If we don't have any authors, the dropdown will be empty. Let's add some authors, and then visit the Article New page to test our select box dropdown.
 
-Now that our author object is part of the article object, we need to reference the author differently in our show page:
+## Delete Our Old Data
 
-```html
-<!-- Inside the <head> tag -->
-<title><%= article.title %> by <%= article.author.fullName %></title>
-<!-- Further down -->
-<h3>Author: <%= article.author.fullName %></h3>
+We are going to be changing the structure of our data. The new articles that we add will now have an `author` field. For this reason it will be helpful to delete our existing data and start clean.
+
+Create a file in the root of your project called `dropData.js`.
+
+```bash
+touch dropData.js
 ```
 
-## Update the Articles New and Edit Pages
+We will add two queries, one to delete all authors and one to delete all articles.
 
-Because we changed our property from `author_id` to `author`, we need to adjust our new and edit forms:
+```js
+const db = require('./models/index.js');
 
-```html
-<select name="author">
+db.Author.deleteMany({}, (err) => {
+  if (err) return res.send(err);
+
+  db.Article.deleteMany({}, (err) => {
+    if (err) return res.send(err);
+
+    console.log('Deleted all authors and articles');
+
+    process.exit();
+  });
+});
 ```
 
-And, just in our edit form, we need to adjust the boolean expression to find the associated author:
+Notice the second query is found inside the callback to the first query. This is because we'll run the second query only after the first one has completed. Afterwards we log out a message to ourselves indicated the queries have completed and then we exit the node process with `process.exit()`.
 
-```html
-<% if(authors[i]._id.toString() === article.author._id.toString()) { %>
+We'll now run our delete queries.
+
+```bash
+node dropData.js
 ```
 
+This process can also be run directly in mongosh:
+
+```bash
+> use authors
+> db.dropDatabase()
+> use articles
+> db.dropDatabase()
+
+```
+
+## Test the Form and Add a New Article
+
+We'll find the Article Create route and add a `console.log(createdArticle)` to inspect the new Article that gets created.
+
+In `controllers/articlesController.js`
+```js
+router.post("/", (req, res) => {
+  // console.log(req.body);
+  Article.create(req.body, (err, createdArticle) => {
+    if (err) return console.log(err);
+    console.log(createdArticle);
+    res.redirect('/articles');
+  });
+});
+```
+
+Let's return to the browser and visit our form to add a new article at `/articles/new`. Fill out the form, selecting an author, and submit. In the terminal we should now see the article object with the author property. Notice the author property is set to the Id of the author we selected.
+
+## Display the Author on the Article Show Page
+
+Now we are storing the author information in an article. When querying the database for a particular article, we will now get the author id as well. We'll be able use this Id to display the author's name on the Article Show Page for that article.
+
+In the `articleShow.ejs` template, let's display the author information. Our article object now has an author property. Let's render it into our template under the article name.
+
+In `./views/articles/show.ejs`
+```html
+<body>
+  <h1>View One Article</h1>
+
+  <h3><%= oneArticle.name %></h3>
+
+  <p>Author: <%= oneArticle.author %></p>
+
+  <p><%= oneArticle.content %></p>
+</body>
+```
+
+Now when we visit the Article Show Page, we should see the a value inputed for author. However, at the moment we're just inserting the Author's **Object Id** to the page. Our eventual goal is to have the Author's name display.
+
+## Populate the Article Data with Author Data
+
+Currently we just have the author's Id being stored in the article. We are going to use [Mongoose's populate method](https://mongoosejs.com/docs/populate.html), to populate the `author` property with actual Author data.
+
+In our articleController let's update our query from this
+```js
+Article.findById(req.params.id, (err, foundArticle) => {
+    if (err) return res.send(err);
+
+    console.log(foundArticle);
+
+    res.render('articles/articlesShow.ejs', { oneArticle: foundArticle });
+  });
+```
+
+to this
+
+```js
+Article.findById(req.params.id)
+  .populate('author')
+  .exec((err, foundArticle) => {
+    if (err) return res.render(err);
+
+    console.log(foundArticle);
+
+    res.render('articles/articlesShow.ejs', { oneArticle: foundArticle });
+  });
+```
+
+Mongoose allows us to call the `.populate()` method and chain it after our initial query. Here we specify that we'd like to populate the `author` field on the Article data that comes back from our query.
+
+After the `populate()` method we chain the `exec()` method, which will allow us to specify a callback function that we want to run once we have recieved the data.
+
+## Display the Author's Name on the Article Show Page
+
+Now let's return to our browser, and make our way to the Article Show Page for a particular article. What do we see now?
+
+![author show](./images/article-show.png)
+
+We're inserting the entire author object onto the page. We're definitely making progress!
+
+Our goal, however, is to display the author's name on the page. Let's update our template to pull the author's name from the author object.
+
+In `./views/articles/articlesShow.ejs`
+```html
+<body>
+  <h1>View One Article</h1>
+
+  <h3><%= oneArticle.name %></h3>
+
+  <p>Author: <%= oneArticle.author.authorName %></p>
+
+  <p><%= oneArticle.content %></p>
+</body>
+```
+
+Awesome! Now let's make the author's name a link that directs to the show page for that author.
+
+```html
+<body>
+  <h1>View One Article</h1>
+
+  <h3><%= oneArticle.name %></h3>
+
+  <a href="/authors/<%= oneArticle.author._id %>">
+    <p>Author: <%= oneArticle.author.authorName %></p>
+  </a>
+
+  <p><%= oneArticle.content %></p>
+</body>
+```
+
+This anchor tag will direct to `/authors/:id` taking us to the show page for that author. Now visit the Article show page and test it out.
+
+<br>
+
+## Deleting an Author resource 
+
+```javascript
+Article.deleteMany({author:req.params.id}, (err,deletedArticles)=>{
+    // Step 1: Delete all articles with an association
+    // console.log(deletedArticles) - note: deleteMany returns a delete status message, not documents
+    Author.findByIdAndRemove(req.params.id, (err, deletedAuthor) => {
+      res.redirect("/authors");
+    });
+  })
+
+```
+
+## Alternative routing + creation of articles 
+
+```js
+// new authors-articles view
+router.get("/:authorId/articles/new", (req, res) => {
+  // render a template that implicitly passes the reference with the form (rather than with a dropdown)
+  Author.findById(req.params.authorId, (err, foundAuthor)=>{
+    if(err){
+      res.send(err)
+    }else {
+      res.render('authors/newArticle.ejs', {author: foundAuthor})
+    }
+  })
+});
+
+```
+
+
+```html
+<!-- views/authors/newArticle.ejs -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Author Page </title>
+</head>
+<body>
+    <h1>Articles: New Article for <%=author.fullName%> </h1>
+    <form action="/authors/<%=author._id%>/articles" method="POST">
+        <label for="title">
+            Title:  <input name="title" type="text"> <br/>
+        </label>
+        <label for="body">
+            Body: <br> 
+            <textarea name="body">Add body</textarea>
+            <input type="hidden" name="author" value="<%=author._id%>">
+            <!-- the author is passed directly as a hidden field-->
+            <!-- the formfield will not appear on the page (and wouldn't require a dropdown) -->
+
+        <input type="submit" value="Create Article">
+    </form>
+</body>
+</html>
+```
 ### Route Design
 
 Remember RESTful routing? It's the most popular modern convention for designing resource paths for nested data. Here is an example of an application that has routes for `Articles` and `Notes` models:
@@ -359,3 +598,4 @@ Remember RESTful routing? It's the most popular modern convention for designing 
 | DELETE | /articles/:article_id/comments/:comment_id | Delete a comment from a article | <details><summary>click for ideas</summary>`.findOne`, `.deleteMany`</details> |
 
 *In routes, avoid nesting resources more than one level deep.*
+

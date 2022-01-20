@@ -323,7 +323,7 @@ module.exports = sessions;
 
 - in every get route let's give access to the user
 
-add the following to
+add the following to each of your templates data objects
 
 ```js
 currentUser: req.session.currentUser;

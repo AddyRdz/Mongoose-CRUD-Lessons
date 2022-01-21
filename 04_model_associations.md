@@ -118,7 +118,6 @@ This approach for creating unique authors that 'contains' or embeds articles sub
 const articleSchema = mongoose.Schema({
     title: String,
     body: String,
-    author_id: String,
 }
 // in /models/Author.js
 const authorSchema = mongoose.Schema({
